@@ -2,6 +2,7 @@ from playwright.sync_api  import sync_playwright
 import json
 
 def scrape_pubchem_Patents(cid):
+    section_list = ['Depositor-Supplied-Patent-Identifiers','WIPO-PATENTSCOPE','Chemical-Co-Occurrences-in-Patents','Chemical-Disease-Co-Occurrences-in-Patents','Chemical-Gene-Co-Occurrences-in-Patents']
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False) 
         page = browser.new_page() 
@@ -25,20 +26,19 @@ def scrape_pubchem_Patents(cid):
 
         Patents = page.query_selector('section#Patents') 
         if Patents:
-            sections = Patents.query_selector_all("section") 
+            result = {}
+            # 提取每个section的文本内容
+            for sec in section_list:
+                section = Patents.query_selector(f"section#{sec}")
+                if not section:
+                    result[sec] = 'None'
+                    continue
+                section.wait_for_selector("div",  state="attached", timeout=60000)
+                content = section.inner_html() 
+                result[sec] = content
         else:
             print("No Patents section found.")
-            return None
-        result = {}
-        # 提取每个section的文本内容
-        for section in sections:
-            section.wait_for_selector("div",  state="attached", timeout=60000)
-            section_title = section.query_selector("h3") 
-            if section_title:
-                title = section_title.inner_text() 
-                content = section.inner_html() 
-                result[title] = content
-                
+            return None        
         browser.close() 
         return result
 

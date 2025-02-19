@@ -1,7 +1,8 @@
 from playwright.sync_api  import sync_playwright
 import json
 
-def scrape_pubchem_literature(cid):
+def scrape_pubchem_Literature(cid):
+    section_list = ['Consolidated-References','Thieme-References','Chemical-Co-Occurrences-in-Literature','Chemical-Gene-Co-Occurrences-in-Literature','Chemical-Disease-Co-Occurrences-in-Literature']
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False) 
         page = browser.new_page() 
@@ -23,24 +24,23 @@ def scrape_pubchem_literature(cid):
         # 增加额外的等待时间
         page.wait_for_timeout(5000) 
 
-        literature = page.query_selector('section#Literature') 
-        if literature:
-            sections = literature.query_selector_all("section") 
+        Literature = page.query_selector('section#Literature') 
+        if Literature:
+            result = {}
+            # 提取每个section的文本内容
+            for sec in section_list:
+                section = Literature.query_selector(f"section#{sec}")
+                if not section:
+                    result[sec] = 'None'
+                    continue
+                section.wait_for_selector("div",  state="attached", timeout=60000)
+                content = section.inner_html() 
+                result[sec] = content
         else:
             print("No Literature section found.")
-            return None
-        result = {}
-        # 提取每个section的文本内容
-        for section in sections:
-            section.wait_for_selector("div",  state="attached", timeout=60000)
-            section_title = section.query_selector("h3") 
-            if section_title:
-                title = section_title.inner_text() 
-                content = section.inner_html() 
-                result[title] = content
-
+            return None        
         browser.close() 
         return result
 
-with open("pubchem.json", "w") as f:
-    json.dump(scrape_pubchem_literature(134611040), f, indent=4)
+with open("pubchem_Literature.json", "w") as f:
+    json.dump(scrape_pubchem_Literature(134611040), f, indent=4)
