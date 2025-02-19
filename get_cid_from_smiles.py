@@ -12,23 +12,23 @@ def get_cid_from_smiles(smiles: str) -> int:
     # URL编码处理特殊字符（如#）
     encoded_smiles = quote(smiles, safe='')
     
-    # 构建API请求URL [8]()
+    # 构建API请求URL()
     url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{encoded_smiles}/cids/txt" 
     
     try:
-        # 发送带自定义Header的请求 [3]()
+        # 发送带自定义Header的请求()
         response = requests.get( 
             url,
             headers={
                 "User-Agent": "Python PubChem Client/1.0",
-                "Accept": "application/json"
+                "Accept": "application/txt"
             },
             timeout=10 
         )
         response.raise_for_status() 
         
-        # 解析JSON响应 [2]()
-        return response.text.strip()
+        # 返回结果
+        return int(response.text.strip())
         
     except requests.exceptions.HTTPError  as e:
         raise Exception(f"API请求失败: HTTP {e.response.status_code}")  from e 
